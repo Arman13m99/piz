@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tehran Vendor Map - Live Analytics</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --success-color: #4CAF50;
+            --warning-color: #FF9800;
+            --error-color: #F44336;
+            --info-color: #2196F3;
+            --bg-color: #f8f9fa;
+            --text-color: #333;
+            --card-bg: #ffffff;
+            --border-color: #e0e0e0;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #e0e0e0;
+            --card-bg: #2d2d2d;
+            --border-color: #404040;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+
+        /* Enhanced Control Panels */
+        .control-panel {
+            position: fixed;
+            z-index: 1000;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            backdrop-filter: blur(10px);
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .control-panel.minimized {
+            transform: scale(0.9);
+            opacity: 0.8;
+        }
+
+        /* Statistics Panel */
+        .stats-panel {
+            top: 10px;
+            left: 10px;
+            width: 320px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .stats-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 16px;
+            border-radius: 12px 12px 0 0;
+            margin: -1px -1px 0 -1px;
+        }
+
+        .stats-header h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .stats-body {
+            padding: 16px;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .metric-card {
+            background: var(--bg-color);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .metric-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .metric-label {
+            font-size: 11px;
+            color: var(--text-color);
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+
+        /* Vendor Selection Panel */
+        .vendor-panel {
+            top: 10px;
+            right: 10px;
+            width: 350px;
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .vendor-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 16px;
+            border-radius: 12px 12px 0 0;
+            margin: -1px -1px 0 -1px;
+        }
+
+        .vendor-body {
+            padding: 16px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 12px 10px 40px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            background: var(--card-bg);
+            color: var(--text-color);
+            transition: border-color 0.3s;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-color);
+            opacity: 0.5;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            background: var(--card-bg);
+            color: var(--text-color);
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-btn:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .filter-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .vendor-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .vendor-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .vendor-item:last-child {
+            border-bottom: none;
+        }
+
+        .vendor-item:hover {
+            background: var(--bg-color);
+        }
+
+        .vendor-checkbox {
+            margin-right: 10px;
+        }
+
+        .vendor-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .vendor-name {
+            font-weight: 500;
+            font-size: 12px;
+            color: var(--text-color);
+        }
+
+        .vendor-code {
+            font-size: 10px;
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+
+        .vendor-badge {
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 8px;
+        }
+
+        .overlap-badge {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .high-volume-badge {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s;
+            flex: 1;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            z-index: 1001;
+            width: 50px;
+            height: 50px;
+            border: none;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+            font-size: 18px;
+        }
+
+        .theme-toggle:hover {
+            transform: translateY(-50%) scale(1.1);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        /* Ranking Panel */
+        .ranking-panel {
+            bottom: 10px;
+            left: 10px;
+            width: 300px;
+        }
+
+        .ranking-tabs {
+            display: flex;
+            background: var(--bg-color);
+            border-radius: 6px;
+            padding: 4px;
+            margin-bottom: 12px;
+        }
+
+        .ranking-tab {
+            flex: 1;
+            padding: 8px 4px;
+            border: none;
+            background: transparent;
+            color: var(--text-color);
+            font-size: 10px;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .ranking-tab.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* Notifications */
+        .notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 400px;
+        }
+
+        .notification {
+            background: var(--card-bg);
+            border-left: 4px solid var(--success-color);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideInRight 0.3s ease;
+        }
+
+        .notification.error {
+            border-left-color: var(--error-color);
+        }
+
+        .notification.warning {
+            border-left-color: var(--warning-color);
+        }
+
+        .notification.info {
+            border-left-color: var(--info-color);
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Loading Spinner */
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Panel Minimize Buttons */
+        .minimize-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s;
+        }
+
+        .minimize-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .control-panel {
+                position: relative;
+                width: 100%;
+                margin-bottom: 10px;
+                border-radius: 8px;
+            }
+
+            .stats-panel,
+            .vendor-panel,
+            .ranking-panel {
+                position: relative;
+                top: auto;
+                left: auto;
+                right: auto;
+                bottom: auto;
+            }
+
+            #map {
+                height: 60vh;
+            }
+
+            .theme-toggle {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                top: auto;
+                transform: none;
+            }
+        }
+
+        /* Custom Leaflet Controls */
+        .leaflet-control-layers {
+            border-radius: 10px !important;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+        }
+
+        .leaflet-popup-content-wrapper {
+            border-radius: 12px !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Notification Container -->
+    <div class="notification-container" id="notifications"></div>
+
+    <!-- Loading Indicator -->
+    <div class="loading" id="loading" style="display: none;">
+        <div class="spinner"></div>
+        <div>Updating map...</div>
+    </div>
+
+    <!-- Statistics Panel -->
+    <div class="control-panel stats-panel" id="statsPanel">
+        <div class="stats-header">
+            <h3><i class="fas fa-chart-bar"></i> Live Analytics</h3>
+            <button class="minimize-btn" onclick="togglePanel('statsPanel')">
+                <i class="fas fa-minus"></i>
+            </button>
+        </div>
+        <div class="stats-body">
+            <div class="metric-grid">
+                <div class="metric-card">
+                    <div class="metric-value" id="totalVendors">{{ vendor_data|length }}</div>
+                    <div class="metric-label">Total Vendors</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="activeVendors">{{ vendor_data|length }}</div>
+                    <div class="metric-label">Active Vendors</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="overlappingVendors">0</div>
+                    <div class="metric-label">Overlapping</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="overlapRate">0%</div>
+                    <div class="metric-label">Overlap Rate</div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                    <span>Performance</span>
+                    <span id="performanceScore">85%</span>
+                </div>
+                <div style="background: var(--border-color); height: 6px; border-radius: 3px; overflow: hidden;">
+                    <div id="performanceBar" style="background: var(--success-color); height: 100%; width: 85%; transition: width 0.3s;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vendor Selection Panel -->
+    <div class="control-panel vendor-panel" id="vendorPanel">
+        <div class="vendor-header">
+            <h3><i class="fas fa-store"></i> Vendor Selection</h3>
+            <button class="minimize-btn" onclick="togglePanel('vendorPanel')">
+                <i class="fas fa-minus"></i>
+            </button>
+        </div>
+        <div class="vendor-body">
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" id="vendorSearch" placeholder="Search vendors...">
+            </div>
+            
+            <div class="filter-buttons">
+                <button class="filter-btn" id="filterAll" onclick="setFilter('all')">All</button>
+                <button class="filter-btn" id="filterOverlapping" onclick="setFilter('overlapping')">Overlapping</button>
+                <button class="filter-btn" id="filterHighVolume" onclick="setFilter('high-volume')">High Volume</button>
+            </div>
+            
+            <div class="vendor-list" id="vendorList">
+                <!-- Vendors will be populated by JavaScript -->
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="applySelection()">
+                    <i class="fas fa-check"></i> Apply
+                </button>
+                <button class="btn btn-secondary" onclick="clearSelection()">
+                    <i class="fas fa-undo"></i> Reset
+                </button>
+            </div>
+            
+            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color); font-size: 11px; color: var(--text-color); opacity: 0.7;">
+                <span id="selectionCount">0 vendors selected</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ranking Panel -->
+    <div class="control-panel ranking-panel" id="rankingPanel">
+        <div class="stats-header">
+            <h3><i class="fas fa-trophy"></i> Rankings</h3>
+            <button class="minimize-btn" onclick="togglePanel('rankingPanel')">
+                <i class="fas fa-minus"></i>
+            </button>
+        </div>
+        <div class="stats-body">
+            <div class="ranking-tabs">
+                {% for criterion in config.RANKING_CRITERIA.keys() %}
+                <button class="ranking-tab {% if loop.first %}active{% endif %}" 
+                        onclick="changeRanking('{{ criterion }}')">
+                    {{ criterion.split()[0] }}
+                </button>
+                {% endfor %}
+            </div>
+            <div id="currentRanking" style="font-size: 11px; color: var(--text-color); opacity: 0.8;">
+                Current: Total Orders
+            </div>
+        </div>
+    </div>
+
+    <!-- Theme Toggle -->
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">
+        <i class="fas fa-moon" id="themeIcon"></i>
+    </button>
+
+    <!-- Map Container -->
+    <div id="map">
+        <!-- Map will be loaded here by JavaScript -->
+    </div>
+
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Application JavaScript -->
+    <script>
+        // Application State
+        const appState = {
+            vendors: {{ vendor_data|tojson }},
+            hiddenVendors: new Set(),
+            currentFilter: 'all',
+            currentRanking: 'Total Orders',
+            darkTheme: false,
+            statistics: {},
+            map: null
+        };
+
+        // Configuration
+        const config = {
+            rankingCriteria: {{ config.RANKING_CRITERIA|tojson }},
+            rankColors: {{ config.RANK_COLORS|tojson }},
+            serviceRadius: {{ config.SERVICE_RADIUS }},
+            mapCenter: {{ config.MAP_CENTER|tojson }},
+            mapZoom: {{ config.MAP_ZOOM }}
+        };
+
+        // Initialize Application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+
+        function initializeApp() {
+            console.log('🚀 Initializing Tehran Vendor Map Application');
+            
+            // Initialize map first
+            initializeMap();
+            
+            // Load theme preference
+            loadThemePreference();
+            
+            // Populate vendor list
+            populateVendorList();
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Load initial statistics
+            loadStatistics();
+            
+            console.log('✅ Application initialized successfully');
+        }
+
+        function initializeMap() {
+            // Create the map
+            appState.map = L.map('map').setView(config.mapCenter, config.mapZoom);
+            
+            // Add tile layers
+            const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            });
+            
+            const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '© Esri'
+            });
+            
+            const dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '© CARTO'
+            });
+            
+            // Add default layer
+            osm.addTo(appState.map);
+            
+            // Create layer control
+            const baseMaps = {
+                "🗺️ Standard Map": osm,
+                "🛰️ Satellite": satellite,
+                "🌙 Dark Theme": dark
+            };
+            
+            L.control.layers(baseMaps).addTo(appState.map);
+            
+            // Add initial vendors
+            addVendorsToMap();
+        }
+
+        function addVendorsToMap() {
+            if (!appState.map) return;
+            
+            // Clear existing markers
+            appState.map.eachLayer(function(layer) {
+                if (layer instanceof L.Marker || layer instanceof L.Circle) {
+                    appState.map.removeLayer(layer);
+                }
+            });
+            
+            // Add vendors
+            appState.vendors.forEach(vendor => {
+                if (!appState.hiddenVendors.has(vendor.vendor_code)) {
+                    addVendorToMap(vendor);
+                }
+            });
+        }
+
+        function addVendorToMap(vendor) {
+            const color = getVendorColor(vendor);
+            const isOverlapping = vendor.is_overlapping;
+            
+            // Add circle
+            const circle = L.circle([vendor.latitude, vendor.longitude], {
+                color: color,
+                fillColor: color,
+                fillOpacity: isOverlapping ? 0.15 : 0.1,
+                radius: config.serviceRadius,
+                weight: isOverlapping ? 3 : 2,
+                dashArray: isOverlapping ? '10, 5' : null
+            }).addTo(appState.map);
+            
+            // Add marker
+            const markerHtml = `<div style="background: ${color}; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">${getRankForVendor(vendor)}</div>`;
+            
+            const marker = L.marker([vendor.latitude, vendor.longitude], {
+                icon: L.divIcon({
+                    html: markerHtml,
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15]
+                })
+            }).addTo(appState.map);
+            
+            // Add popup
+            const popupContent = createPopupContent(vendor);
+            marker.bindPopup(popupContent);
+            circle.bindPopup(popupContent);
+            
+            // Store references
+            vendor._marker = marker;
+            vendor._circle = circle;
+        }
+
+        function getVendorColor(vendor) {
+            // Get color based on current ranking
+            return config.rankColors[appState.currentRanking] || '#666666';
+        }
+
+        function getRankForVendor(vendor) {
+            // Use stored rank if available
+            if (vendor._currentRank) {
+                return vendor._currentRank;
+            }
+            
+            // Calculate rank based on current ranking criteria
+            const rankingColumn = config.rankingCriteria[appState.currentRanking];
+            if (!rankingColumn) return '?';
+            
+            const visibleVendors = appState.vendors.filter(v => !appState.hiddenVendors.has(v.vendor_code));
+            const sorted = visibleVendors.sort((a, b) => (b[rankingColumn] || 0) - (a[rankingColumn] || 0));
+            const rank = sorted.findIndex(v => v.vendor_code === vendor.vendor_code) + 1;
+            return rank || '?';
+        }
+
+        function createPopupContent(vendor) {
+            const rank = getRankForVendor(vendor);
+            const color = getVendorColor(vendor);
+            
+            return `
+                <div style="font-family: Arial; width: 250px;">
+                    <div style="background: ${color}; color: white; padding: 10px; margin: -10px -10px 10px -10px; border-radius: 4px;">
+                        <h4 style="margin: 0;">#${rank} - ${vendor.vendor_name}</h4>
+                        <div style="font-size: 11px; opacity: 0.9;">${vendor.vendor_code}</div>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <span style="background: ${vendor.is_overlapping ? '#ffebee' : '#e8f5e8'}; color: ${vendor.is_overlapping ? '#c62828' : '#2e7d32'}; padding: 4px 8px; border-radius: 12px; font-size: 10px;">
+                            ${vendor.is_overlapping ? '⚠️ OVERLAPPING' : '✅ NO OVERLAP'}
+                        </span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                        <div style="text-align: center; padding: 6px; background: #f8f9fa; border-radius: 4px;">
+                            <div style="font-size: 14px; font-weight: bold;">${vendor.total_order_count.toLocaleString()}</div>
+                            <div style="font-size: 9px; color: #666;">Total Orders</div>
+                        </div>
+                        <div style="text-align: center; padding: 6px; background: #f8f9fa; border-radius: 4px;">
+                            <div style="font-size: 14px; font-weight: bold;">${vendor.avg_daily_orders.toFixed(1)}</div>
+                            <div style="font-size: 9px; color: #666;">Daily Avg</div>
+                        </div>
+                    </div>
+                    <div style="font-size: 10px; color: #666;">
+                        <div>Organic: ${vendor.organic_order_count.toLocaleString()} | Non-organic: ${vendor.non_organic_order_count.toLocaleString()}</div>
+                        <div>Ratio: ${(vendor.organic_to_non_organic_ratio * 100).toFixed(1)}%</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function setupEventListeners() {
+            // Search input
+            document.getElementById('vendorSearch').addEventListener('input', debounce(filterVendors, 300));
+            
+            // Filter buttons
+            document.getElementById('filterAll').classList.add('active');
+        }
+
+        function populateVendorList() {
+            const container = document.getElementById('vendorList');
+            const searchTerm = document.getElementById('vendorSearch').value.toLowerCase();
+            
+            let filteredVendors = appState.vendors.filter(vendor => {
+                // Search filter
+                if (searchTerm && !vendor.vendor_name.toLowerCase().includes(searchTerm) && 
+                    !vendor.vendor_code.toLowerCase().includes(searchTerm)) {
+                    return false;
+                }
+                
+                // Current filter
+                if (appState.currentFilter === 'overlapping' && !vendor.is_overlapping) {
+                    return false;
+                }
+                
+                if (appState.currentFilter === 'high-volume') {
+                    const threshold = getHighVolumeThreshold();
+                    if (vendor.total_order_count < threshold) {
+                        return false;
+                    }
+                }
+                
+                return true;
+            });
+
+            container.innerHTML = '';
+            
+            filteredVendors.forEach(vendor => {
+                const item = document.createElement('div');
+                item.className = 'vendor-item';
+                item.innerHTML = `
+                    <input type="checkbox" class="vendor-checkbox" 
+                           data-vendor-code="${vendor.vendor_code}"
+                           ${appState.hiddenVendors.has(vendor.vendor_code) ? 'checked' : ''}>
+                    <div class="vendor-info">
+                        <div class="vendor-name">${vendor.vendor_name}</div>
+                        <div class="vendor-code">${vendor.vendor_code}</div>
+                    </div>
+                    ${vendor.is_overlapping ? '<span class="vendor-badge overlap-badge">Overlap</span>' : ''}
+                    ${vendor.total_order_count > getHighVolumeThreshold() ? '<span class="vendor-badge high-volume-badge">High Vol</span>' : ''}
+                `;
+                
+                item.addEventListener('click', function(e) {
+                    if (e.target.type !== 'checkbox') {
+                        const checkbox = item.querySelector('.vendor-checkbox');
+                        checkbox.checked = !checkbox.checked;
+                        toggleVendorSelection(vendor.vendor_code, checkbox.checked);
+                    }
+                });
+                
+                const checkbox = item.querySelector('.vendor-checkbox');
+                checkbox.addEventListener('change', function() {
+                    toggleVendorSelection(vendor.vendor_code, this.checked);
+                });
+                
+                container.appendChild(item);
+            });
+            
+            updateSelectionCount();
+        }
+
+        function toggleVendorSelection(vendorCode, hide) {
+            if (hide) {
+                appState.hiddenVendors.add(vendorCode);
+            } else {
+                appState.hiddenVendors.delete(vendorCode);
+            }
+            updateSelectionCount();
+        }
+
+        function updateSelectionCount() {
+            document.getElementById('selectionCount').textContent = 
+                `${appState.hiddenVendors.size} vendors selected to hide`;
+        }
+
+        function setFilter(filterType) {
+            // Update button states
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            
+            // Find the correct button ID
+            let buttonId;
+            switch(filterType) {
+                case 'all':
+                    buttonId = 'filterAll';
+                    break;
+                case 'overlapping':
+                    buttonId = 'filterOverlapping';
+                    break;
+                case 'high-volume':
+                    buttonId = 'filterHighVolume';
+                    break;
+                default:
+                    buttonId = 'filterAll';
+            }
+            
+            const button = document.getElementById(buttonId);
+            if (button) {
+                button.classList.add('active');
+            }
+            
+            appState.currentFilter = filterType;
+            populateVendorList();
+        }
+
+        function filterVendors() {
+            populateVendorList();
+        }
+
+        function applySelection() {
+            showLoading();
+            
+            const hiddenVendors = Array.from(appState.hiddenVendors);
+            
+            fetch('/api/filter_vendors', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    hidden_vendors: hiddenVendors
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    updateMapLayers(data.visible_vendors, data.overlapping_vendors);
+                    updateStatistics(data.statistics);
+                    showNotification('Selection applied successfully!', 'success');
+                } else {
+                    showNotification('Error applying selection: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showNotification('Network error: ' + error.message, 'error');
+            });
+        }
+
+        function clearSelection() {
+            appState.hiddenVendors.clear();
+            
+            // Update checkboxes
+            document.querySelectorAll('.vendor-checkbox').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            updateSelectionCount();
+            applySelection();
+        }
+
+        function updateMapLayers(visibleVendors, overlappingVendors) {
+            // Clear existing vendors
+            appState.map.eachLayer(function(layer) {
+                if (layer instanceof L.Marker || layer instanceof L.Circle) {
+                    appState.map.removeLayer(layer);
+                }
+            });
+            
+            // Add visible vendors
+            visibleVendors.forEach(vendor => {
+                addVendorToMap(vendor);
+            });
+        }
+
+        function changeRanking(rankingType) {
+            showLoading();
+            
+            // Update tab states
+            document.querySelectorAll('.ranking-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.getElementById('currentRanking').textContent = `Current: ${rankingType}`;
+            appState.currentRanking = rankingType;
+            
+            fetch(`/api/rankings/${encodeURIComponent(rankingType)}`)
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.vendors) {
+                    updateMapWithRankings(data.vendors, rankingType);
+                    showNotification(`Switched to ${rankingType} ranking`, 'info');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showNotification('Error loading rankings: ' + error.message, 'error');
+                // Fallback: update locally
+                updateMapWithCurrentRanking(rankingType);
+            });
+        }
+
+        function updateMapWithCurrentRanking(rankingType) {
+            appState.currentRanking = rankingType;
+            
+            // Re-render all visible vendors with new ranking
+            const visibleVendors = appState.vendors.filter(v => !appState.hiddenVendors.has(v.vendor_code));
+            updateMapLayers(visibleVendors, []);
+        }
+
+        function updateMapWithRankings(rankedVendors, rankingType) {
+            appState.currentRanking = rankingType;
+            
+            // Update the vendors data with ranks
+            rankedVendors.forEach(rankedVendor => {
+                const vendor = appState.vendors.find(v => v.vendor_code === rankedVendor.vendor_code);
+                if (vendor) {
+                    vendor._currentRank = rankedVendor.rank;
+                }
+            });
+            
+            // Re-render map
+            const visibleVendors = appState.vendors.filter(v => !appState.hiddenVendors.has(v.vendor_code));
+            updateMapLayers(visibleVendors, []);
+        }
+
+        function loadStatistics() {
+            fetch('/api/statistics')
+            .then(response => response.json())
+            .then(data => {
+                updateStatistics(data);
+            })
+            .catch(error => {
+                console.error('Error loading statistics:', error);
+            });
+        }
+
+        function updateStatistics(stats) {
+            appState.statistics = stats;
+            
+            document.getElementById('totalVendors').textContent = stats.total_vendors || 0;
+            document.getElementById('activeVendors').textContent = stats.active_vendors || 0;
+            document.getElementById('overlappingVendors').textContent = stats.overlapping_vendors || 0;
+            document.getElementById('overlapRate').textContent = (stats.overlap_rate || 0).toFixed(1) + '%';
+            
+            // Update performance score (simple calculation)
+            const performanceScore = Math.max(0, 100 - (stats.overlap_rate || 0));
+            document.getElementById('performanceScore').textContent = performanceScore.toFixed(0) + '%';
+            document.getElementById('performanceBar').style.width = performanceScore + '%';
+            
+            // Update performance bar color
+            const bar = document.getElementById('performanceBar');
+            if (performanceScore > 80) {
+                bar.style.backgroundColor = 'var(--success-color)';
+            } else if (performanceScore > 60) {
+                bar.style.backgroundColor = 'var(--warning-color)';
+            } else {
+                bar.style.backgroundColor = 'var(--error-color)';
+            }
+        }
+
+        function toggleTheme() {
+            appState.darkTheme = !appState.darkTheme;
+            document.body.setAttribute('data-theme', appState.darkTheme ? 'dark' : 'light');
+            
+            const icon = document.getElementById('themeIcon');
+            icon.className = appState.darkTheme ? 'fas fa-sun' : 'fas fa-moon';
+            
+            // Save preference
+            localStorage.setItem('darkTheme', appState.darkTheme);
+            
+            showNotification(`Switched to ${appState.darkTheme ? 'dark' : 'light'} theme`, 'info');
+        }
+
+        function loadThemePreference() {
+            const savedTheme = localStorage.getItem('darkTheme');
+            if (savedTheme === 'true') {
+                appState.darkTheme = true;
+                document.body.setAttribute('data-theme', 'dark');
+                document.getElementById('themeIcon').className = 'fas fa-sun';
+            }
+        }
+
+        function togglePanel(panelId) {
+            const panel = document.getElementById(panelId);
+            panel.classList.toggle('minimized');
+        }
+
+        function getHighVolumeThreshold() {
+            const orders = appState.vendors.map(v => v.total_order_count).sort((a, b) => b - a);
+            return orders[Math.floor(orders.length * 0.25)] || 100;
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function showNotification(message, type = 'info') {
+            const container = document.getElementById('notifications');
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            container.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideInRight 0.3s ease reverse';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Auto-refresh statistics every 30 seconds
+        setInterval(loadStatistics, 30000);
+    </script>
+</body>
+</html>

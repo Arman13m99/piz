@@ -1,0 +1,180 @@
+# ==================== CORE DEPENDENCIES ====================
+# Data processing and manipulation
+pandas>=1.5.0,<2.1.0
+numpy>=1.21.0,<2.0.0
+
+# Geographic data processing
+geopandas>=0.12.0,<0.15.0
+shapely>=1.8.0,<2.1.0
+
+# Interactive mapping
+folium>=0.14.0,<0.16.0
+
+# Excel file handling
+openpyxl>=3.0.0,<3.2.0
+xlrd>=2.0.0,<2.1.0
+
+# ==================== WEB APPLICATION FRAMEWORK ====================
+# Flask web framework for live application
+Flask>=2.3.0,<3.0.0
+Flask-CORS>=4.0.0,<5.0.0
+
+# Template engine (included with Flask but explicit for clarity)
+Jinja2>=3.1.0,<3.2.0
+
+# WSGI server for production deployment
+Waitress>=2.1.0,<3.0.0
+
+# ==================== ENHANCED FEATURES ====================
+# JSON handling for API responses
+simplejson>=3.18.0,<3.20.0
+
+# Date and time handling
+python-dateutil>=2.8.0,<2.9.0
+
+# URL handling and validation
+urllib3>=1.26.0,<2.1.0
+
+# ==================== PERFORMANCE OPTIMIZATION ====================
+# Faster CSV processing
+pyarrow>=10.0.0,<15.0.0
+
+# Memory profiling (optional, for development)
+memory-profiler>=0.60.0,<0.62.0
+
+# Caching for web application
+Flask-Caching>=2.0.0,<2.2.0
+
+# ==================== DEVELOPMENT DEPENDENCIES ====================
+# Code formatting and linting (development only)
+black>=22.0.0,<24.0.0
+flake8>=4.0.0,<7.0.0
+isort>=5.10.0,<5.13.0
+
+# Testing framework (development only)
+pytest>=7.0.0,<8.0.0
+pytest-cov>=3.0.0,<5.0.0
+pytest-flask>=1.2.0,<1.4.0
+
+# Documentation generation (development only)
+sphinx>=4.0.0,<8.0.0
+sphinx-rtd-theme>=1.0.0,<2.1.0
+
+# ==================== OPTIONAL DEPENDENCIES ====================
+# For enhanced image processing (if needed)
+Pillow>=9.0.0,<11.0.0
+
+# For advanced statistical analysis (optional)
+scipy>=1.9.0,<1.12.0
+scikit-learn>=1.1.0,<1.4.0
+
+# For database connectivity (optional)
+sqlalchemy>=1.4.0,<2.1.0
+psycopg2-binary>=2.9.0,<2.10.0  # PostgreSQL
+pymongo>=4.0.0,<5.0.0           # MongoDB
+
+# For Redis caching (optional)
+redis>=4.0.0,<5.0.0
+Flask-Session>=0.5.0,<0.6.0
+
+# ==================== PRODUCTION DEPLOYMENT ====================
+# Production WSGI server
+gunicorn>=20.1.0,<22.0.0  # For Linux/Mac
+# waitress>=2.1.0,<3.0.0   # For Windows (already included above)
+
+# Environment management
+python-dotenv>=0.19.0,<1.1.0
+
+# Logging enhancements
+loguru>=0.6.0,<0.8.0
+
+# Process monitoring
+psutil>=5.8.0,<6.0.0
+
+# ==================== SECURITY DEPENDENCIES ====================
+# Security headers for Flask
+Flask-Talisman>=1.0.0,<1.2.0
+
+# Rate limiting
+Flask-Limiter>=3.0.0,<4.0.0
+
+# ==================== COMPATIBILITY NOTES ====================
+# Python 3.8+ required for the following features:
+# - f-strings with = specifier
+# - positional-only parameters
+# - improved typing support
+# - pathlib enhancements
+# - Flask 2.3+ compatibility
+
+# Operating System Compatibility:
+# - Windows 10+
+# - macOS 10.14+
+# - Linux (Ubuntu 18.04+, CentOS 7+)
+
+# Browser Compatibility for web interface:
+# - Chrome 70+
+# - Firefox 65+
+# - Safari 12+
+# - Edge 79+
+
+# ==================== INSTALLATION COMMANDS ====================
+
+# Basic installation:
+# pip install -r requirements.txt
+
+# Development installation:
+# pip install -r requirements.txt
+# pip install pytest pytest-flask black flake8 isort
+
+# Production installation:
+# pip install -r requirements.txt
+# pip install gunicorn python-dotenv loguru
+
+# Full feature installation:
+# pip install -r requirements.txt
+# pip install redis Flask-Session Flask-Talisman Flask-Limiter
+
+# ==================== DOCKER INSTALLATION ====================
+# For containerized deployment, add these to your Dockerfile:
+# RUN pip install --no-cache-dir -r requirements.txt
+# RUN pip install gunicorn python-dotenv
+
+# ==================== ENVIRONMENT VARIABLES ====================
+# The following environment variables can be set:
+# FLASK_ENV=development|production
+# FLASK_DEBUG=True|False
+# SECRET_KEY=your-secret-key
+# DATABASE_URL=your-database-url (if using database)
+# REDIS_URL=your-redis-url (if using Redis)
+
+# ==================== VERSION NOTES ====================
+# Last updated: 2024
+# Tested with Python 3.8, 3.9, 3.10, 3.11, 3.12
+# Flask 2.3+ provides better async support and security features
+# 
+# Version constraints explained:
+# - Flask: Version 2.3+ for latest security and performance improvements
+# - Flask-CORS: Essential for AJAX requests from frontend
+# - Waitress: Cross-platform WSGI server, alternative to Gunicorn
+# - Flask-Caching: For caching expensive operations in web app
+# - Jinja2: Template engine, explicit version for security updates
+#
+# Security considerations:
+# - All dependencies are from trusted sources (PyPI)
+# - Version constraints prevent automatic updates to potentially breaking versions
+# - Flask-Talisman adds security headers
+# - Flask-Limiter prevents abuse through rate limiting
+# - Regular security updates should be applied within constraint ranges
+
+# ==================== PERFORMANCE NOTES ====================
+# For high-performance deployments:
+# - Use Redis for session storage and caching
+# - Enable Flask-Caching for expensive database operations
+# - Use Gunicorn with multiple workers in production
+# - Consider using PyPy for improved Python performance
+# - Use nginx as reverse proxy for static file serving
+
+# Memory usage optimization:
+# - Set appropriate worker counts based on available memory
+# - Use connection pooling for database connections
+# - Implement proper garbage collection for long-running processes
